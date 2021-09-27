@@ -57,6 +57,7 @@ public class Main {
             Solution sol = new Solution();
             //grid is the actual maze
             int[][] grid = values;
+           // int[][] grid = maze();
 
             //newGrid is the maze with no blockage
             int[][] newGrid = dummyValues;
@@ -66,11 +67,17 @@ public class Main {
             System.out.println(length);
             System.out.println();
 
-            //output from repeated forward A*
-            if(length!=-1) {
-                int rfAstarLength = sol.repeatedForwardAstar(newGrid, 0, 0, 1, grid);
-                System.out.println(rfAstarLength);
+            if(length!=-1){
+                int ans = sol.RFAstarTestVariant(newGrid,0,0,1,grid);
+                System.out.println(ans);
             }
+
+
+            //output from repeated forward A*
+//            if(length!=-1) {
+//              //  int rfAstarLength = sol.repeatedForwardAstar(newGrid, 0, 0, 1, grid);
+//              //  System.out.println(rfAstarLength);
+//            }
             //To check Solvabilty
             if(length!=-1){
                 //If the maze is solvable adding true to the solvability list
@@ -124,17 +131,18 @@ public class Main {
             System.out.println("In catch block");
             e.printStackTrace();
         }
-
-
-
+        
 
     }
+
 }
 
 class Solution {
-    Map<List<Integer>,List<Integer>> pathMapRFA = new HashMap<List<Integer>,List<Integer>>();
+    Map<List<Integer>, List<Integer>> pathMapRFA = new HashMap<List<Integer>, List<Integer>>();
+    List<Candidate> track = new ArrayList<Candidate>();
 
     boolean[][] visitedRFA = new boolean[8][8];
+
     //Queue<Candidate> pqRFA = new PriorityQueue<>((a, b) -> a.totalEstimate - b.totalEstimate);
     // Candidate represents a possible option for travelling to the cell
     // at (row, col).
@@ -158,9 +166,7 @@ class Solution {
 
 
     private static final int[][] directions =
-            new int[][]{ {-1, 0}, {0, -1}, {0, 1}, {1, 0}};
-
-
+            new int[][]{{-1, 0}, {0, -1}, {0, 1}, {1, 0}};
 
 
     public int shortestPathBinaryMatrix(int[][] grid) {
@@ -175,7 +181,7 @@ class Solution {
         pq.add(new Candidate(0, 0, 1, estimate(0, 0, grid)));
 
         boolean[][] visited = new boolean[grid.length][grid[0].length];
-        Map<List<Integer>,List<Integer>> pathMap = new HashMap<List<Integer>,List<Integer>>();
+        Map<List<Integer>, List<Integer>> pathMap = new HashMap<List<Integer>, List<Integer>>();
 
 
         // Carry out the A* search.
@@ -194,7 +200,7 @@ class Solution {
                 System.out.print(goalnode);
                 System.out.print("->");
                 List<Integer> result = pathMap.get(goalnode);
-                for(int i=0;i<best.distanceSoFar;i++){
+                for (int i = 0; i < best.distanceSoFar; i++) {
                     System.out.print(result);
                     System.out.print("->");
                     result = pathMap.get(result);
@@ -210,7 +216,7 @@ class Solution {
             }
 
             visited[best.row][best.col] = true;
-           // pathQueue.add({new int[]{best.row,best.col},{});
+            // pathQueue.add({new int[]{best.row,best.col},{});
 
             for (int[] neighbour : getNeighbours(best.row, best.col, grid)) {
                 int neighbourRow = neighbour[0];
@@ -235,9 +241,9 @@ class Solution {
                 List<Integer> parent = new ArrayList<>();
                 parent.add(best.row);
                 parent.add(best.col);
-                if(pathMap.containsKey(neigh)){
+                if (pathMap.containsKey(neigh)) {
                     continue;
-                }else {
+                } else {
                     pathMap.put(neigh, parent);
                 }
 
@@ -266,21 +272,24 @@ class Solution {
     // Get the best case estimate of how much further it is to the bottom-right cell.
     private int estimate(int row, int col, int[][] grid) {
         //Manhattan distance
-        int heuristic = Math.abs(row-(grid.length-1))+Math.abs(col-(grid[0].length-1));
+        int heuristic = Math.abs(row - (grid.length - 1)) + Math.abs(col - (grid[0].length - 1));
         return heuristic;
     }
+
     public static int cellsProcessed = 0;
-    public int cellsProcessed(){
-       return cellsProcessed++;
+
+    public int cellsProcessed() {
+        return cellsProcessed++;
     }
 
     public static int cellsProcessedRFA = 0;
-    public int cellsProcessedRFA(){
+
+    public int cellsProcessedRFA() {
         return cellsProcessedRFA++;
     }
 
 
-    public int repeatedForwardAstar(int[][] newGrid,int row, int col,int distanceSoFar,int[][] grid) {
+    public int RFAstar(int[][] newGrid, int row, int col, int distanceSoFar) {
 
         // Firstly, we need to check that the start and target cells are open.
         if (newGrid[0][0] != 0 || newGrid[newGrid.length - 1][newGrid[0].length - 1] != 0) {
@@ -288,112 +297,159 @@ class Solution {
         }
 
         // Set up the A* search.
-        Queue<Candidate> pqRFA = new PriorityQueue<>((a, b) -> a.totalEstimate - b.totalEstimate);
-        pqRFA.add(new Candidate(row, col, distanceSoFar, estimate(row, col, newGrid)));
+        Queue<Candidate> pq = new PriorityQueue<>((a, b) -> a.totalEstimate - b.totalEstimate);
+        pq.add(new Candidate(row, col, distanceSoFar, estimate(0, 0, newGrid)));
 
-        //boolean[][] visited = new boolean[newGrid.length][newGrid[0].length];
-       // Map<List<Integer>,List<Integer>> pathMap = new HashMap<List<Integer>,List<Integer>>();
+        boolean[][] visited = new boolean[newGrid.length][newGrid[0].length];
+        Map<Candidate, Candidate> pathMap = new HashMap<Candidate, Candidate>();
 
 
         // Carry out the A* search.
-        while (!pqRFA.isEmpty()) {
+        while (!pq.isEmpty()) {
 
-            Candidate best = pqRFA.remove();
-            int counter = cellsProcessedRFA();
-            if(newGrid[best.row][best.col]!=grid[best.row][best.col]){
-                newGrid[best.row][best.col]=grid[best.row][best.col];
-                List<Integer> block = new ArrayList<>();
-                block.add(best.row);
-                block.add(best.col);
-                List<Integer> parent = pathMapRFA.get(block);
-                pathMapRFA.remove(block);
-                visitedRFA[parent.get(0)][parent.get(1)] = false;
-                int ans = repeatedForwardAstar(newGrid,parent.get(0),parent.get(1), best.distanceSoFar-1,grid);
-                if(ans==-1){
-                    best.row = parent.get(0);
-                    best.col=parent.get(1);
-                    visitedRFA[parent.get(0)][parent.get(1)] = false;
-                }else{
-                    return ans;
-                }
-
-            }
-
+            Candidate best = pq.remove();
+            //int counter = cellsProcessed();
 
 
             // Is this for the target cell?
             if (best.row == newGrid.length - 1 && best.col == newGrid[0].length - 1) {
 
-                List<Integer> goalnode = new ArrayList<>();
-                goalnode.add(best.row);
-                goalnode.add(best.col);
-                System.out.print(goalnode);
-                System.out.print("->");
-                List<Integer> result = pathMapRFA.get(goalnode);
-                for(int i=0;i<best.distanceSoFar;i++){
-               // while(result.get(0)!=row && result.get(1)!=col){
-                    System.out.print(result);
+                if (track.isEmpty()) {
+                    Candidate result = pathMap.get(best);
+                    System.out.print(best.row+","+best.col);
                     System.out.print("->");
-                    result = pathMapRFA.get(result);
+                    track.add(best);
+                    Candidate source = new Candidate(row,col,distanceSoFar,estimate(row,col,newGrid));
+                   // for (int i = 0; i < best.distanceSoFar - 1; i++) {
+                    while (result.row!=source.row || result.col!=source.col){
+                        System.out.print(result.row + "," + result.col);
+                        track.add(result);
+                        System.out.print("->");
+                        result = pathMap.get(result);
+
+                    }
+                    System.out.println(source.row+","+ source.col);
+                    track.add(source);
+
+                } else {
+                    track.clear();
+                    Candidate result = pathMap.get(best);
+                    System.out.print(best.row+","+ best.col);
+                    System.out.print("->");
+                    track.add(best);
+                    Candidate source = new Candidate(row,col,distanceSoFar,estimate(row,col,newGrid));
+       //             for (int i = 0; i <7; i++) {
+                    while(result.row!=source.row || result.col!=source.col){
+                        System.out.print(result.row + "," + result.col);
+                        track.add(result);
+                        System.out.print("->");
+                        result = pathMap.get(result);
+
+                    }
+                    track.add(source);
+                    //System.out.println(source.row+","+ source.col);
+                    System.out.println();
 
                 }
-
                 return best.distanceSoFar;
             }
 
-            // Have we already found the best path to this cell?
-            if (visitedRFA[best.row][best.col]) {
-                continue;
+                // Have we already found the best path to this cell?
+                if (visited[best.row][best.col]) {
+                    continue;
+                }
+
+                visited[best.row][best.col] = true;
+                // pathQueue.add({new int[]{best.row,best.col},{});
+
+                for (int[] neighbour : getNeighbours(best.row, best.col, newGrid)) {
+                    int neighbourRow = neighbour[0];
+                    int neighbourCol = neighbour[1];
+
+                    // This check isn't necessary for correctness, but it greatly
+                    // improves performance.
+                    if (visited[neighbourRow][neighbourCol]) {
+                        continue;
+                    }
+
+                    // Otherwise, we need to create a Candidate object for the option
+                    // of going to neighbor through the current cell.
+                    int newDistance = best.distanceSoFar + 1;
+                    int totalEstimate = newDistance + estimate(neighbourRow, neighbourCol, newGrid);
+                    Candidate candidate =
+                            new Candidate(neighbourRow, neighbourCol, newDistance, totalEstimate);
+                    pq.add(candidate);
+
+                    if (!pathMap.containsKey(candidate)) {
+                        pathMap.put(candidate, best);
+                    }
+                   // pathMap.put(candidate, best);
+
+
+
+                }
             }
-
-            visitedRFA[best.row][best.col] = true;
-
-
-            for (int[] neighbour : getNeighbours(best.row, best.col, newGrid)) {
-                int neighbourRow = neighbour[0];
-                int neighbourCol = neighbour[1];
-
-                // This check isn't necessary for correctness, but it greatly
-                // improves performance.
-                if (visitedRFA[neighbourRow][neighbourCol]) {
-                    continue;
-                }
-                List<Integer> neigh = new ArrayList<>();
-                neigh.add(neighbourRow);
-                neigh.add(neighbourCol);
-                List<Integer> parent = new ArrayList<>();
-                parent.add(best.row);
-                parent.add(best.col);
-
-
-                // Otherwise, we need to create a Candidate object for the option
-                // of going to neighbor through the current cell.
-                int newDistance = best.distanceSoFar + 1;
-                int totalEstimate = newDistance + estimate(neighbourRow, neighbourCol, newGrid);
-                Candidate candidate =
-                        new Candidate(neighbourRow, neighbourCol, newDistance, totalEstimate);
-                if(pathMapRFA.containsKey(neigh)){
-                    continue;
-                }else{
-                    pqRFA.add(candidate);
-                }
-
-//                List<Integer> neigh = new ArrayList<>();
-//                neigh.add(neighbourRow);
-//                neigh.add(neighbourCol);
-//                List<Integer> parent = new ArrayList<>();
-//                parent.add(best.row);
-//                parent.add(best.col);
-                if(pathMapRFA.containsKey(neigh)){
-                    continue;
-                }
-                pathMapRFA.put(neigh, parent);
-
-
-
-            }
-        }
         // The target was unreachable.
         return -1;
+        }
+
+
+    public int RFAstarTest(int[][] newGrid, int row, int col, int distanceSoFar, int[][] grid) {
+        int ans1 = RFAstar(newGrid, row, col, distanceSoFar);
+        Collections.reverse(track);
+        int ans=0;
+        for (int i = 0; i < track.size(); i++) {
+            Candidate canValue = track.get(i);
+            if (newGrid[canValue.row][canValue.col] != grid[canValue.row][canValue.col]) {
+                newGrid[canValue.row][canValue.col] = grid[canValue.row][canValue.col];
+
+                Candidate newSource = track.get(i - 1);
+                 ans = RFAstar(newGrid, newSource.row, newSource.col, 0)+ newSource.distanceSoFar;
+                 Collections.reverse(track);
+                 i = -1;
+
+            }
+
+        }
+        if(ans==0){
+            return ans1;
+        }else{
+            return ans;
+        }
+
+       // return -1;
+    }
+
+    public int RFAstarTestVariant(int[][] newGrid, int row, int col, int distanceSoFar, int[][] grid) {
+        int ans1 = RFAstar(newGrid, row, col, distanceSoFar);
+        Collections.reverse(track);
+        int ans=0;
+        for (int i = 0; i < track.size(); i++) {
+            Candidate canValue = track.get(i);
+            for (int[] neighbour : getNeighbours(canValue.row, canValue.col, grid)){
+                int neighbourRow = neighbour[0];
+                int neighbourCol = neighbour[1];
+                if(newGrid[neighbourRow][neighbourCol]!=grid[neighbourRow][neighbourCol]){
+                    newGrid[neighbourRow][neighbourCol]=grid[neighbourRow][neighbourCol];
+                }
+            }
+            if (newGrid[canValue.row][canValue.col] != grid[canValue.row][canValue.col]) {
+                newGrid[canValue.row][canValue.col] = grid[canValue.row][canValue.col];
+
+                Candidate newSource = track.get(i - 1);
+                ans = RFAstar(newGrid, newSource.row, newSource.col, 0)+ newSource.distanceSoFar;
+                Collections.reverse(track);
+                i = -1;
+
+            }
+
+        }
+        if(ans==0){
+            return ans1;
+        }else{
+            return ans;
+        }
+
+        // return -1;
     }
 }
