@@ -14,7 +14,7 @@ public class Main {
         List<Integer> cellsProcessedRFA = new ArrayList<>();
         List<Boolean> solvabilty = new ArrayList<>();
         for(int l=0;l<1;l++){
-            int dim = 8;
+            int dim = 4;
             int values[][] = new int[dim][dim];
             int dummyValues[][] = new int[dim][dim];
 
@@ -57,7 +57,7 @@ public class Main {
             Solution sol = new Solution();
             //grid is the actual maze
             int[][] grid = values;
-           // int[][] grid = maze();
+            //int[][] grid = maze();
 
             //newGrid is the maze with no blockage
             int[][] newGrid = dummyValues;
@@ -131,9 +131,27 @@ public class Main {
             System.out.println("In catch block");
             e.printStackTrace();
         }
-        
+
 
     }
+
+//    public static int[][] maze(){
+//        Scanner scanner = new Scanner(System.in);
+//        int[][] maze = new int[4][4];
+//        for(int i =0;i<4;i++){
+//            for (int j =0;j<4;j++){
+//                maze[i][j] = scanner.nextInt();
+//            }
+//        }
+//        for(int i =0;i<4;i++){
+//            for (int j =0;j<4;j++){
+//                System.out.println(maze[i][j]);
+//            }
+//            System.out.println();
+//        }
+//        return maze;
+//
+//    }
 
 }
 
@@ -395,60 +413,60 @@ class Solution {
 
 
     public int RFAstarTest(int[][] newGrid, int row, int col, int distanceSoFar, int[][] grid) {
-        int ans1 = RFAstar(newGrid, row, col, distanceSoFar);
+         RFAstar(newGrid, row, col, distanceSoFar);
         Collections.reverse(track);
-        int ans=0;
+
         for (int i = 0; i < track.size(); i++) {
             Candidate canValue = track.get(i);
             if (newGrid[canValue.row][canValue.col] != grid[canValue.row][canValue.col]) {
                 newGrid[canValue.row][canValue.col] = grid[canValue.row][canValue.col];
 
                 Candidate newSource = track.get(i - 1);
-                 ans = RFAstar(newGrid, newSource.row, newSource.col, 0)+ newSource.distanceSoFar;
+                RFAstar(newGrid, newSource.row, newSource.col, 0);
                  Collections.reverse(track);
                  i = -1;
 
             }
 
         }
-        if(ans==0){
-            return ans1;
-        }else{
-            return ans;
-        }
-
+        int ans = RFAstar(newGrid, 0, 0, 1);
+        return ans;
        // return -1;
     }
 
     public int RFAstarTestVariant(int[][] newGrid, int row, int col, int distanceSoFar, int[][] grid) {
-        int ans1 = RFAstar(newGrid, row, col, distanceSoFar);
+        int trajectoryLen = 0;
+        RFAstar(newGrid, row, col, distanceSoFar);
         Collections.reverse(track);
-        int ans=0;
+        boolean[][] visited = new boolean[newGrid.length][newGrid[0].length];
+        //int ans=0;
         for (int i = 0; i < track.size(); i++) {
             Candidate canValue = track.get(i);
-            for (int[] neighbour : getNeighbours(canValue.row, canValue.col, grid)){
+            for (int[] neighbour : getNeighbours(canValue.row, canValue.col, newGrid)){
                 int neighbourRow = neighbour[0];
                 int neighbourCol = neighbour[1];
                 if(newGrid[neighbourRow][neighbourCol]!=grid[neighbourRow][neighbourCol]){
                     newGrid[neighbourRow][neighbourCol]=grid[neighbourRow][neighbourCol];
+                    visited[neighbourRow][neighbourCol]=true;
                 }
             }
-            if (newGrid[canValue.row][canValue.col] != grid[canValue.row][canValue.col]) {
-                newGrid[canValue.row][canValue.col] = grid[canValue.row][canValue.col];
+            if (newGrid[canValue.row][canValue.col] != grid[canValue.row][canValue.col] || visited[canValue.row][canValue.col]==true) {
+               // newGrid[canValue.row][canValue.col] = grid[canValue.row][canValue.col];
 
                 Candidate newSource = track.get(i - 1);
-                ans = RFAstar(newGrid, newSource.row, newSource.col, 0)+ newSource.distanceSoFar;
+                trajectoryLen++;
+                trajectoryLen++;
+                RFAstar(newGrid, newSource.row, newSource.col, 1);
                 Collections.reverse(track);
                 i = -1;
 
+            }else{
+                trajectoryLen++;
             }
 
         }
-        if(ans==0){
-            return ans1;
-        }else{
-            return ans;
-        }
+       // int ans = RFAstar(newGrid, 0, 0, 1);
+        return trajectoryLen;
 
         // return -1;
     }
